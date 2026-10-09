@@ -1,0 +1,6 @@
+packages: []
+
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 262800 # ignore for old packages (6 months)
+minimumReleaseAge: 2880

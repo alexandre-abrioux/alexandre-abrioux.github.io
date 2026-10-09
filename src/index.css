@@ -1,0 +1,156 @@
+html {
+    min-height: 100%;
+    background: radial-gradient(
+        ellipse at center,
+        var(--bg-1, #1a1040) 0%,
+        var(--bg-2, #0a0618) 70%,
+        var(--bg-3, #05030d) 100%
+    );
+    background-attachment: fixed;
+    touch-action: none;
+}
+
+.identity {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: "Fredoka", system-ui, sans-serif;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+.identity h1 {
+    margin: 0 1rem;
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-align: center;
+}
+
+.identity h1 span {
+    white-space: nowrap;
+}
+
+.identity a {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    text-decoration: none;
+}
+
+.identity a svg {
+    width: 1.1em;
+    height: 1.1em;
+    fill: currentColor;
+}
+
+.identity a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.next-palette {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 2;
+    padding: 0.75rem 1.25rem;
+    font-family: "Fredoka", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.next-palette:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.next-palette-icon {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    .next-palette,
+    .next-palette:hover {
+        padding: 0.5rem;
+        font-size: 1.5rem;
+        background: none;
+        border: none;
+        backdrop-filter: none;
+    }
+
+    .next-palette-label {
+        display: none;
+    }
+
+    .next-palette-icon {
+        display: inline;
+    }
+}
+
+.debug {
+    position: fixed;
+    left: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.15rem 0.75rem;
+    margin: 0;
+    padding: calc(0.5rem + 5px) 0.75rem 0.5rem;
+    font-family: ui-monospace, monospace;
+    font-size: 0.625rem;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    clip-path: inset(0 round 10px);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+}
+
+.debug dd {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.debug-progress {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    height: 5px;
+}
+
+.debug-progress-fill {
+    height: 100%;
+    background: rgba(150, 100, 255, 0.8);
+    transform: scaleX(var(--progress, 0));
+    transform-origin: left;
+    transition: transform 0.5s ease-in-out;
+}
+
+.blobs {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    mix-blend-mode: screen;
+    pointer-events: none;
+}

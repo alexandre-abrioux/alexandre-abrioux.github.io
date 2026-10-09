@@ -1,0 +1,26 @@
+{
+  "name": "blob",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "license": "ISC",
+  "author": "Alexandre Abrioux",
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp build",
+    "preview": "vp preview",
+    "check": "vp check",
+    "fmt": "vp fmt",
+    "prepare": "vp config"
+  },
+  "dependencies": {
+    "@fontsource/fredoka": "^5.3.0",
+    "js-easing-functions": "^1.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.1.0"
+  },
+  "packageManager": "pnpm@10.32.1"
+}
