@@ -19,7 +19,7 @@ export default class Species {
     this.sprite = new SpeciesSprite(this.color);
   }
 
-  applyPalette(palette: Palette): void {
+  public applyPalette(palette: Palette): void {
     this.color = this.pickColor(palette);
     this.sprite.setColor(this.color);
   }

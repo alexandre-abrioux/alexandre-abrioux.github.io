@@ -37,12 +37,46 @@ export default class SpeciesSprite {
     this.setColor(color);
   }
 
-  setColor(color: HslColor): void {
+  public setColor(color: HslColor): void {
     this.color = color;
     this.gradient = undefined;
   }
 
-  createBorderRadius(): BorderRadius {
+  public draw(): void {
+    const ctx = this.context;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const size = this.size;
+    ctx.clearRect(0, 0, size, size);
+    ctx.setTransform(size, 0, 0, size, size / 2, size / 2);
+    ctx.fillStyle = this.getGradient();
+    ctx.beginPath();
+    ctx.roundRect(-0.5, -0.5, 1, 1, this.corners);
+    ctx.fill();
+  }
+
+  public animate(): void {
+    const now = performance.now();
+    if (now > this.borderRadiusNextUpdateAt) {
+      this.borderRadiusNextUpdateAt = now + this.borderRadiusAnimationDuration;
+      this.borderRadiusDirection = !this.borderRadiusDirection;
+    }
+    const animationStartedAt = this.borderRadiusNextUpdateAt - this.borderRadiusAnimationDuration;
+    const start = this.borderRadiusDirection ? this.borderRadius1 : this.borderRadius2;
+    const target = this.borderRadiusDirection ? this.borderRadius2 : this.borderRadius1;
+    const progress = easeInOutSine(
+      Math.min(now - animationStartedAt, this.borderRadiusAnimationDuration),
+      0,
+      1,
+      this.borderRadiusAnimationDuration,
+    );
+    for (let i = 0; i < 4; i++) {
+      const corner = this.corners[i];
+      corner.x = start[i] + (target[i] - start[i]) * progress;
+      corner.y = start[i + 4] + (target[i + 4] - start[i + 4]) * progress;
+    }
+  }
+
+  private createBorderRadius(): BorderRadius {
     const topLeftX = random(0.4, 0.75);
     const bottomLeftX = random(0.4, 0.75);
     const topLeftY = random(0.4, 0.75);
@@ -63,46 +97,12 @@ export default class SpeciesSprite {
     ];
   }
 
-  getGradient(): CanvasGradient {
+  private getGradient(): CanvasGradient {
     if (this.gradient) return this.gradient;
     const { h, s, l } = this.color;
     this.gradient = this.context.createRadialGradient(0, 0, 0, 0, 0, Math.SQRT1_2);
     this.gradient.addColorStop(0, `hsla(${h}, ${s}%, ${l}%, 0.15)`);
     this.gradient.addColorStop(1, `hsl(${h}, ${s}%, ${l}%)`);
     return this.gradient;
-  }
-
-  draw(): void {
-    const ctx = this.context;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const size = this.size;
-    ctx.clearRect(0, 0, size, size);
-    ctx.setTransform(size, 0, 0, size, size / 2, size / 2);
-    ctx.fillStyle = this.getGradient();
-    ctx.beginPath();
-    ctx.roundRect(-0.5, -0.5, 1, 1, this.corners);
-    ctx.fill();
-  }
-
-  animate(): void {
-    const now = performance.now();
-    if (now > this.borderRadiusNextUpdateAt) {
-      this.borderRadiusNextUpdateAt = now + this.borderRadiusAnimationDuration;
-      this.borderRadiusDirection = !this.borderRadiusDirection;
-    }
-    const animationStartedAt = this.borderRadiusNextUpdateAt - this.borderRadiusAnimationDuration;
-    const start = this.borderRadiusDirection ? this.borderRadius1 : this.borderRadius2;
-    const target = this.borderRadiusDirection ? this.borderRadius2 : this.borderRadius1;
-    const progress = easeInOutSine(
-      Math.min(now - animationStartedAt, this.borderRadiusAnimationDuration),
-      0,
-      1,
-      this.borderRadiusAnimationDuration,
-    );
-    for (let i = 0; i < 4; i++) {
-      const corner = this.corners[i];
-      corner.x = start[i] + (target[i] - start[i]) * progress;
-      corner.y = start[i + 4] + (target[i + 4] - start[i + 4]) * progress;
-    }
   }
 }

@@ -74,16 +74,7 @@ export default class Blob {
     this.velocityY = (Math.sin(this.movementDirection) * this.movementSpeed) / 1000;
   }
 
-  maxRadiusPercent(): { x: number; y: number } {
-    const { viewport } = Scene.instance;
-    const radius = (maxSize * maxScale) / 2;
-    return {
-      x: (radius / viewport.width) * 100,
-      y: (radius / viewport.height) * 100,
-    };
-  }
-
-  draw(ctx: CanvasRenderingContext2D): void {
+  public draw(ctx: CanvasRenderingContext2D): void {
     const { pixelRatio, viewport } = Scene.instance;
     const size = this.initialSize * this.scale * pixelRatio;
     if (size <= 0) return;
@@ -97,7 +88,7 @@ export default class Blob {
     ctx.drawImage(this.species.sprite.canvas, -0.5, -0.5, 1, 1);
   }
 
-  animate(delta: number, repulsionPoints: Position[]): void {
+  public animate(delta: number, repulsionPoints: Position[]): void {
     this.animateInitialGrowth();
     this.animateScale();
     this.animatePosition(delta);
@@ -106,7 +97,42 @@ export default class Blob {
     this.relaxSpeed(delta);
   }
 
-  getPosition(): Position {
+  public distanceSqTo(other: Blob): number {
+    const a = this.getPosition();
+    const b = other.getPosition();
+    return (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+  }
+
+  public repelFrom(other: Blob, delta: number): void {
+    const a = this.getPosition();
+    const b = other.getPosition();
+    this.applyRepulsion(b, delta, blobRepulsionStrength);
+    other.applyRepulsion(a, delta, blobRepulsionStrength);
+  }
+
+  public duplicate(): Blob[] | false {
+    if (Math.random() > 0.03) return false;
+    const children = [new Blob(this.species), new Blob(this.species)];
+    const margin = this.maxRadiusPercent();
+    children.forEach((child) => {
+      child.top = this.top + random(-1, 1);
+      child.left = this.left + random(-1, 1);
+      child.top = Math.max(margin.y, Math.min(100 - margin.y, child.top));
+      child.left = Math.max(margin.x, Math.min(100 - margin.x, child.left));
+    });
+    return children;
+  }
+
+  private maxRadiusPercent(): { x: number; y: number } {
+    const { viewport } = Scene.instance;
+    const radius = (maxSize * maxScale) / 2;
+    return {
+      x: (radius / viewport.width) * 100,
+      y: (radius / viewport.height) * 100,
+    };
+  }
+
+  private getPosition(): Position {
     const { viewport } = Scene.instance;
     return {
       x: (this.left / 100) * viewport.width,
@@ -114,20 +140,7 @@ export default class Blob {
     };
   }
 
-  distanceSqTo(other: Blob): number {
-    const a = this.getPosition();
-    const b = other.getPosition();
-    return (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
-  }
-
-  repelFrom(other: Blob, delta: number): void {
-    const a = this.getPosition();
-    const b = other.getPosition();
-    this.applyRepulsion(b, delta, blobRepulsionStrength);
-    other.applyRepulsion(a, delta, blobRepulsionStrength);
-  }
-
-  applyRepulsion(
+  private applyRepulsion(
     repulsionPoint: Position,
     delta: number,
     strength: number = repulsionStrength,
@@ -153,7 +166,7 @@ export default class Blob {
     this.velocityY = (vy / h) * 100;
   }
 
-  relaxSpeed(delta: number): void {
+  private relaxSpeed(delta: number): void {
     const current = Math.hypot(this.velocityX, this.velocityY);
     if (current === 0) return;
     const cruising = this.movementSpeed / 1000;
@@ -163,7 +176,7 @@ export default class Blob {
     this.velocityY *= factor;
   }
 
-  animatePosition(delta: number): void {
+  private animatePosition(delta: number): void {
     const { viewport } = Scene.instance;
     this.left += this.velocityX * delta;
     this.top += this.velocityY * delta;
@@ -184,7 +197,7 @@ export default class Blob {
     }
   }
 
-  animateInitialGrowth(): void {
+  private animateInitialGrowth(): void {
     if (this.initialSize === this.initialSizeTarget) return;
     const elapsed = performance.now() - this.createdAt;
     if (elapsed >= this.initialGrowAnimationDuration) {
@@ -201,7 +214,7 @@ export default class Blob {
     this.initialSize = Math.max(0, size);
   }
 
-  animateScale(): void {
+  private animateScale(): void {
     const now = performance.now();
     if (now > this.scaleNextUpdateAt) {
       this.scaleNextUpdateAt = now + this.scaleAnimationDuration;
@@ -221,20 +234,7 @@ export default class Blob {
     this.scale = scale;
   }
 
-  animateRotation(delta: number): void {
+  private animateRotation(delta: number): void {
     this.rotation += this.rotationPerSecond * delta;
-  }
-
-  duplicate(): Blob[] | false {
-    if (Math.random() > 0.03) return false;
-    const children = [new Blob(this.species), new Blob(this.species)];
-    const margin = this.maxRadiusPercent();
-    children.forEach((child) => {
-      child.top = this.top + random(-1, 1);
-      child.left = this.left + random(-1, 1);
-      child.top = Math.max(margin.y, Math.min(100 - margin.y, child.top));
-      child.left = Math.max(margin.x, Math.min(100 - margin.x, child.left));
-    });
-    return children;
   }
 }
