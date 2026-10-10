@@ -24,7 +24,8 @@ export default class SpeciesSprite {
     this.canvas = document.createElement("canvas");
     this.canvas.width = spriteSize;
     this.canvas.height = spriteSize;
-    const context = this.canvas.getContext("2d");
+    // render the sprite on CPU otherwise blobs blink on every frame on Firefox Android
+    const context = this.canvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("Canvas 2D context is not supported");
     this.context = context;
     this.borderRadius1 = this.createBorderRadius();
