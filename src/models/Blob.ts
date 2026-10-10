@@ -1,7 +1,7 @@
 import { easeInOutBack, easeOutBack } from "js-easing-functions";
 
 import { random } from "../helper";
-import type { Position } from "../types";
+import type { Position, Size } from "../types";
 import type Species from "./Species";
 
 const initialGrowOvershoot = 3;
@@ -20,6 +20,7 @@ const repulsionRelaxationMs = 1000;
 
 export default class Blob {
   public readonly species: Species;
+  private readonly viewport: Size;
   private createdAt: number;
   private top: number;
   private left: number;
@@ -47,9 +48,10 @@ export default class Blob {
   private velocityX: number;
   private velocityY: number;
 
-  constructor(species: Species) {
+  constructor(species: Species, viewport: Size) {
     this.species = species;
-    const margin = Blob.maxRadiusPercent();
+    this.viewport = viewport;
+    const margin = this.maxRadiusPercent();
     this.top = random(margin.y, 100 - margin.y);
     this.left = random(margin.x, 100 - margin.x);
     this.mirrored = Math.random() > 0.5;
@@ -73,22 +75,22 @@ export default class Blob {
     this.velocityY = (Math.sin(this.movementDirection) * this.movementSpeed) / 1000;
   }
 
-  static maxRadiusPercent(): { x: number; y: number } {
+  maxRadiusPercent(): { x: number; y: number } {
     const radius = (maxSize * maxScale) / 2;
     return {
-      x: (radius / window.innerWidth) * 100,
-      y: (radius / window.innerHeight) * 100,
+      x: (radius / this.viewport.width) * 100,
+      y: (radius / this.viewport.height) * 100,
     };
   }
 
-  draw(ctx: CanvasRenderingContext2D, viewportWidth: number, viewportHeight: number): void {
-    const size = this.initialSize * this.scale;
+  draw(ctx: CanvasRenderingContext2D, pixelRatio: number): void {
+    const size = this.initialSize * this.scale * pixelRatio;
     if (size <= 0) return;
     const angle = (this.rotation * Math.PI) / 180;
     const cos = Math.cos(angle) * size;
     const sin = Math.sin(angle) * size;
-    const x = (this.left / 100) * viewportWidth;
-    const y = (this.top / 100) * viewportHeight;
+    const x = (this.left / 100) * this.viewport.width * pixelRatio;
+    const y = (this.top / 100) * this.viewport.height * pixelRatio;
     const flip = this.mirrored ? -1 : 1;
     ctx.setTransform(cos * flip, sin * flip, -sin, cos, x, y);
     ctx.drawImage(this.species.sprite.canvas, -0.5, -0.5, 1, 1);
@@ -105,8 +107,8 @@ export default class Blob {
 
   getPosition(): Position {
     return {
-      x: (this.left / 100) * window.innerWidth,
-      y: (this.top / 100) * window.innerHeight,
+      x: (this.left / 100) * this.viewport.width,
+      y: (this.top / 100) * this.viewport.height,
     };
   }
 
@@ -129,8 +131,7 @@ export default class Blob {
     delta: number,
     strength: number = repulsionStrength,
   ): void {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const { width: w, height: h } = this.viewport;
     const dx = (this.left / 100) * w - repulsionPoint.x;
     const dy = (this.top / 100) * h - repulsionPoint.y;
     const rawDistanceSq = dx * dx + dy * dy;
@@ -165,8 +166,8 @@ export default class Blob {
     this.left += this.velocityX * delta;
     this.top += this.velocityY * delta;
     const radius = (this.initialSize * this.scale) / 2;
-    const radiusX = (radius / window.innerWidth) * 100;
-    const radiusY = (radius / window.innerHeight) * 100;
+    const radiusX = (radius / this.viewport.width) * 100;
+    const radiusY = (radius / this.viewport.height) * 100;
     if (
       (this.left < radiusX && this.velocityX < 0) ||
       (this.left > 100 - radiusX && this.velocityX > 0)
@@ -224,8 +225,8 @@ export default class Blob {
 
   duplicate(): Blob[] | false {
     if (Math.random() > 0.03) return false;
-    const children = [new Blob(this.species), new Blob(this.species)];
-    const margin = Blob.maxRadiusPercent();
+    const children = [new Blob(this.species, this.viewport), new Blob(this.species, this.viewport)];
+    const margin = this.maxRadiusPercent();
     children.forEach((child) => {
       child.top = this.top + random(-1, 1);
       child.left = this.left + random(-1, 1);

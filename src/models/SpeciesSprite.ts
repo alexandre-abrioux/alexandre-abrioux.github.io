@@ -3,13 +3,14 @@ import { easeInOutSine } from "js-easing-functions";
 import { random } from "../helper";
 import type { HslColor } from "./Species";
 
-const spriteSize = 128;
+const spriteBaseSize = 128;
 
 type BorderRadius = number[];
 
 export default class SpeciesSprite {
   public readonly canvas: HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
+  private size: number;
   private color!: HslColor;
   private gradient?: CanvasGradient;
 
@@ -20,10 +21,11 @@ export default class SpeciesSprite {
   private borderRadiusAnimationDuration: number;
   private borderRadiusNextUpdateAt: number = 0;
 
-  constructor(color: HslColor) {
+  constructor(color: HslColor, pixelRatio: number) {
+    this.size = Math.round(spriteBaseSize * pixelRatio);
     this.canvas = document.createElement("canvas");
-    this.canvas.width = spriteSize;
-    this.canvas.height = spriteSize;
+    this.canvas.width = this.size;
+    this.canvas.height = this.size;
     // render the sprite on CPU otherwise blobs blink on every frame on Firefox Android
     const context = this.canvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("Canvas 2D context is not supported");
@@ -72,8 +74,9 @@ export default class SpeciesSprite {
   draw(): void {
     const ctx = this.context;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, spriteSize, spriteSize);
-    ctx.setTransform(spriteSize, 0, 0, spriteSize, spriteSize / 2, spriteSize / 2);
+    const size = this.size;
+    ctx.clearRect(0, 0, size, size);
+    ctx.setTransform(size, 0, 0, size, size / 2, size / 2);
     ctx.fillStyle = this.getGradient();
     ctx.beginPath();
     ctx.roundRect(-0.5, -0.5, 1, 1, this.corners);
