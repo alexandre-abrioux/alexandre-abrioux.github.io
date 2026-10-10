@@ -10,6 +10,7 @@ export default class Scene {
   private static readonly smallScreenQuery = "(max-width: 640px)";
   private static readonly initSpecies = 5;
   private static readonly duplicateInterval = 200;
+  private static readonly duplicateMinFps = 50;
   private static readonly debugInterval = 500;
   private static readonly blobOpacity = 0.9;
 
@@ -28,6 +29,7 @@ export default class Scene {
   private animationFrame?: number;
   private frames = 0;
   private lastDebugAt = 0;
+  private fps = Infinity;
   private smallScreen = window.matchMedia(Scene.smallScreenQuery);
 
   constructor() {
@@ -208,6 +210,7 @@ export default class Scene {
   private duplicate(): void {
     const maxBlobs = this.maxBlobs;
     if (this.blobs.length >= maxBlobs) return;
+    if (this.fps < Scene.duplicateMinFps) return;
     if (this.loopTime - this.duplicatedAt < Scene.duplicateInterval) return;
     this.duplicatedAt = this.loopTime;
     const blobs = this.blobs.slice();
@@ -225,6 +228,7 @@ export default class Scene {
     const elapsed = this.loopTime - this.lastDebugAt;
     if (this.lastDebugAt !== 0 && elapsed < Scene.debugInterval) return;
     const fps = Math.round((this.frames * 1000) / elapsed);
+    if (this.lastDebugAt !== 0) this.fps = fps;
     this.frames = 0;
     this.lastDebugAt = this.loopTime;
     const maxBlobs = this.maxBlobs;
