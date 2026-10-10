@@ -1,4 +1,4 @@
-import { easeInOutBack, easeInOutSine, easeOutBack } from "js-easing-functions";
+import { easeInOutBack, easeOutBack } from "js-easing-functions";
 
 import { random } from "../helper";
 import type { Position } from "../types";
@@ -18,24 +18,16 @@ const repulsionMaxDistance = 250;
 const repulsionMaxSpeed = 0.5;
 const repulsionRelaxationMs = 1000;
 
-type BorderRadius = number[];
-
 export default class Blob {
   public readonly specie: Specie;
   private createdAt: number;
   private top: number;
   private left: number;
+  private mirrored: boolean;
 
   private initialGrowAnimationDuration: number;
   private initialSize: number = 0;
   private initialSizeTarget: number;
-
-  private borderRadius1: BorderRadius;
-  private borderRadius2: BorderRadius;
-  private corners: DOMPointInit[] = [0, 1, 2, 3].map(() => ({ x: 0, y: 0 }));
-  private borderRadiusDirection: boolean = false;
-  private borderRadiusAnimationDuration: number;
-  private borderRadiusNextUpdateAt: number = 0;
 
   private scale1: number;
   private scale2: number;
@@ -60,8 +52,7 @@ export default class Blob {
     const margin = Blob.maxRadiusPercent();
     this.top = random(margin.y, 100 - margin.y);
     this.left = random(margin.x, 100 - margin.x);
-    this.borderRadius1 = this.createBorderRadius();
-    this.borderRadius2 = this.createBorderRadius();
+    this.mirrored = Math.random() > 0.5;
     this.initialSizeTarget = random(minSize, maxSize);
     this.createdAt = performance.now();
     this.rotation = random(0, 360);
@@ -69,7 +60,6 @@ export default class Blob {
     this.scale2 = this.scale1 + random(-0.1, 0.1);
     this.scale2 = Math.min(maxScale, Math.max(minScale, this.scale2));
     this.scale = this.scale1;
-    this.borderRadiusAnimationDuration = random(500, 1000);
     this.rotationAnimationDuration = random(8000, 15000);
     this.scaleAnimationDuration = random(800, 1500);
     this.initialGrowAnimationDuration = random(1000, 2000);
@@ -91,27 +81,6 @@ export default class Blob {
     };
   }
 
-  createBorderRadius(): BorderRadius {
-    const topLeftX = random(0.4, 0.75);
-    const bottomLeftX = random(0.4, 0.75);
-    const topLeftY = random(0.4, 0.75);
-    const topRightY = random(0.4, 0.75);
-    const topRightX = 1 - topLeftX;
-    const bottomRightX = 1 - bottomLeftX;
-    const bottomLeftY = 1 - topLeftY;
-    const bottomRightY = 1 - topRightY;
-    return [
-      topLeftX,
-      topRightX,
-      bottomRightX,
-      bottomLeftX,
-      topLeftY,
-      topRightY,
-      bottomRightY,
-      bottomLeftY,
-    ];
-  }
-
   draw(ctx: CanvasRenderingContext2D, viewportWidth: number, viewportHeight: number): void {
     const size = this.initialSize * this.scale;
     if (size <= 0) return;
@@ -120,16 +89,13 @@ export default class Blob {
     const sin = Math.sin(angle) * size;
     const x = (this.left / 100) * viewportWidth;
     const y = (this.top / 100) * viewportHeight;
-    ctx.setTransform(cos, sin, -sin, cos, x, y);
-    ctx.fillStyle = this.specie.getGradient(ctx);
-    ctx.beginPath();
-    ctx.roundRect(-0.5, -0.5, 1, 1, this.corners);
-    ctx.fill();
+    const flip = this.mirrored ? -1 : 1;
+    ctx.setTransform(cos * flip, sin * flip, -sin, cos, x, y);
+    ctx.drawImage(this.specie.sprite.canvas, -0.5, -0.5, 1, 1);
   }
 
   animate(delta: number, repulsionPoints: Position[]): void {
     this.animateInitialGrowth();
-    this.animateBorderRadius();
     this.animateScale();
     this.animatePosition(delta);
     this.animateRotation(delta);
@@ -230,28 +196,6 @@ export default class Blob {
       initialGrowOvershoot,
     );
     this.initialSize = Math.max(0, size);
-  }
-
-  animateBorderRadius(): void {
-    const now = performance.now();
-    if (now > this.borderRadiusNextUpdateAt) {
-      this.borderRadiusNextUpdateAt = now + this.borderRadiusAnimationDuration;
-      this.borderRadiusDirection = !this.borderRadiusDirection;
-    }
-    const animationStartedAt = this.borderRadiusNextUpdateAt - this.borderRadiusAnimationDuration;
-    const start = this.borderRadiusDirection ? this.borderRadius1 : this.borderRadius2;
-    const target = this.borderRadiusDirection ? this.borderRadius2 : this.borderRadius1;
-    const progress = easeInOutSine(
-      Math.min(now - animationStartedAt, this.borderRadiusAnimationDuration),
-      0,
-      1,
-      this.borderRadiusAnimationDuration,
-    );
-    for (let i = 0; i < 4; i++) {
-      const corner = this.corners[i];
-      corner.x = start[i] + (target[i] - start[i]) * progress;
-      corner.y = start[i + 4] + (target[i + 4] - start[i + 4]) * progress;
-    }
   }
 
   animateScale(): void {

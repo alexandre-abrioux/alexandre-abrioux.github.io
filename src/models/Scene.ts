@@ -158,6 +158,7 @@ export default class Scene {
     const repulsionPoints = this.cursor ? [...headerPoints, this.cursor] : headerPoints;
     const delta = Math.min(elapsed, 1000);
     this.repelClosestPairs(delta);
+    for (let i = 0; i < this.species.length; i++) this.species[i].sprite.animate();
     for (let i = 0; i < this.blobs.length; i++) this.blobs[i].animate(delta, repulsionPoints);
   }
 
@@ -165,6 +166,7 @@ export default class Scene {
     const ctx = this.context;
     const width = window.innerWidth;
     const height = window.innerHeight;
+    for (let i = 0; i < this.species.length; i++) this.species[i].sprite.draw();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.globalAlpha = Scene.blobOpacity;
