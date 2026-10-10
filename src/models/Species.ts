@@ -1,6 +1,6 @@
 import { random } from "../helper";
 import type { Palette } from "../palettes";
-import SpecieSprite from "./SpecieSprite";
+import SpeciesSprite from "./SpeciesSprite";
 
 export interface HslColor {
   h: number;
@@ -8,15 +8,15 @@ export interface HslColor {
   l: number;
 }
 
-export default class Specie {
+export default class Species {
   index: number;
   color: HslColor;
-  public readonly sprite: SpecieSprite;
+  public readonly sprite: SpeciesSprite;
 
   constructor(index: number, palette: Palette) {
     this.index = index;
     this.color = this.pickColor(palette);
-    this.sprite = new SpecieSprite(this.color);
+    this.sprite = new SpeciesSprite(this.color);
   }
 
   applyPalette(palette: Palette): void {

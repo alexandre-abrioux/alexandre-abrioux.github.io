@@ -1,13 +1,13 @@
 import { easeInOutSine } from "js-easing-functions";
 
 import { random } from "../helper";
-import type { HslColor } from "./Specie";
+import type { HslColor } from "./Species";
 
 const spriteSize = 128;
 
 type BorderRadius = number[];
 
-export default class SpecieSprite {
+export default class SpeciesSprite {
   public readonly canvas: HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
   private color!: HslColor;

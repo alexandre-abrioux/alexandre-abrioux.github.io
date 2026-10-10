@@ -2,7 +2,7 @@ import { easeInOutBack, easeOutBack } from "js-easing-functions";
 
 import { random } from "../helper";
 import type { Position } from "../types";
-import type Specie from "./Specie";
+import type Species from "./Species";
 
 const initialGrowOvershoot = 3;
 const minScale = 0.5;
@@ -19,7 +19,7 @@ const repulsionMaxSpeed = 0.5;
 const repulsionRelaxationMs = 1000;
 
 export default class Blob {
-  public readonly specie: Specie;
+  public readonly species: Species;
   private createdAt: number;
   private top: number;
   private left: number;
@@ -47,8 +47,8 @@ export default class Blob {
   private velocityX: number;
   private velocityY: number;
 
-  constructor(specie: Specie) {
-    this.specie = specie;
+  constructor(species: Species) {
+    this.species = species;
     const margin = Blob.maxRadiusPercent();
     this.top = random(margin.y, 100 - margin.y);
     this.left = random(margin.x, 100 - margin.x);
@@ -91,7 +91,7 @@ export default class Blob {
     const y = (this.top / 100) * viewportHeight;
     const flip = this.mirrored ? -1 : 1;
     ctx.setTransform(cos * flip, sin * flip, -sin, cos, x, y);
-    ctx.drawImage(this.specie.sprite.canvas, -0.5, -0.5, 1, 1);
+    ctx.drawImage(this.species.sprite.canvas, -0.5, -0.5, 1, 1);
   }
 
   animate(delta: number, repulsionPoints: Position[]): void {
@@ -224,7 +224,7 @@ export default class Blob {
 
   duplicate(): Blob[] | false {
     if (Math.random() > 0.03) return false;
-    const children = [new Blob(this.specie), new Blob(this.specie)];
+    const children = [new Blob(this.species), new Blob(this.species)];
     const margin = Blob.maxRadiusPercent();
     children.forEach((child) => {
       child.top = this.top + random(-1, 1);

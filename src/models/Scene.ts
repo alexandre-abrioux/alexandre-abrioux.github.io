@@ -1,7 +1,7 @@
 import { type Palette, palettes } from "../palettes";
 import type { Position } from "../types";
 import Blob from "./Blob";
-import Specie from "./Specie";
+import Species from "./Species";
 
 export default class Scene {
   private static readonly initBlobs = 10;
@@ -16,7 +16,7 @@ export default class Scene {
   private palette: Palette;
   private canvas: HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
-  private species: Specie[] = [];
+  private species: Species[] = [];
   private blobs: Blob[] = [];
   private loopTime = 0;
   private animatedAt = 0;
@@ -45,12 +45,12 @@ export default class Scene {
     window.addEventListener("resize", () => this.resizeCanvas());
     this.applyPaletteBackground();
     for (let i = 0; i < Scene.initSpecies; i++) {
-      const specie = new Specie(i, this.palette);
-      this.species.push(specie);
+      const species = new Species(i, this.palette);
+      this.species.push(species);
     }
     for (let i = 0; i < Scene.initBlobs; i++) {
-      const specie = this.species[i % this.species.length];
-      const blob = new Blob(specie);
+      const species = this.species[i % this.species.length];
+      const blob = new Blob(species);
       this.add(blob);
     }
   }
@@ -185,7 +185,7 @@ export default class Scene {
       let closestDistanceSq = Infinity;
       for (let j = 0; j < this.blobs.length; j++) {
         const other = this.blobs[j];
-        if (other.specie !== blob.specie) continue;
+        if (other.species !== blob.species) continue;
         if (other === blob || paired.has(other)) continue;
         const distanceSq = blob.distanceSqTo(other);
         if (distanceSq < closestDistanceSq) {
