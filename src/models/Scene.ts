@@ -14,10 +14,18 @@ export default class Scene {
   private static readonly debugInterval = 500;
   private static readonly blobOpacity = 0.9;
   private static readonly maxPixelRatio = 2;
+  private static singleton?: Scene;
+
+  public static get instance(): Scene {
+    Scene.singleton ??= new Scene();
+    return Scene.singleton;
+  }
+
+  public readonly viewport: Size = { width: 0, height: 0 };
+  public pixelRatio = Scene.measurePixelRatio();
 
   private palette: Palette;
   private canvas: HTMLCanvasElement;
-  private viewport: Size = { width: 0, height: 0 };
   private context: CanvasRenderingContext2D;
   private species: Species[] = [];
   private blobs: Blob[] = [];
@@ -34,7 +42,7 @@ export default class Scene {
   private fps = Infinity;
   private smallScreen = window.matchMedia(Scene.smallScreenQuery);
 
-  constructor() {
+  private constructor() {
     this.palette = this.pickRandomPalette();
     this.canvas = document.createElement("canvas");
     this.canvas.className = "blobs";
@@ -50,12 +58,12 @@ export default class Scene {
     window.visualViewport?.addEventListener("resize", () => this.resizeCanvas());
     this.applyPaletteBackground();
     for (let i = 0; i < Scene.initSpecies; i++) {
-      const species = new Species(i, this.palette, this.pixelRatio);
+      const species = new Species(i, this.palette);
       this.species.push(species);
     }
     for (let i = 0; i < Scene.initBlobs; i++) {
       const species = this.species[i % this.species.length];
-      const blob = new Blob(species, this.viewport);
+      const blob = new Blob(species);
       this.add(blob);
     }
   }
@@ -90,7 +98,7 @@ export default class Scene {
     };
     onResize();
     window.addEventListener("resize", onResize);
-    document.fonts.ready.then(onResize);
+    void document.fonts.ready.then(onResize);
   }
 
   public pause(): void {
@@ -126,11 +134,11 @@ export default class Scene {
   }
 
   private resizeCanvas(): void {
-    const ratio = this.pixelRatio;
+    this.pixelRatio = Scene.measurePixelRatio();
     Object.assign(this.viewport, Scene.measureViewport());
     const { width, height } = this.viewport;
-    this.canvas.width = Math.round(width * ratio);
-    this.canvas.height = Math.round(height * ratio);
+    this.canvas.width = Math.round(width * this.pixelRatio);
+    this.canvas.height = Math.round(height * this.pixelRatio);
   }
 
   private add(blob: Blob): void {
@@ -172,14 +180,13 @@ export default class Scene {
 
   private draw(): void {
     const ctx = this.context;
-    const ratio = this.canvas.width / this.viewport.width;
     for (let i = 0; i < this.species.length; i++) this.species[i].sprite.draw();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.globalAlpha = Scene.blobOpacity;
     ctx.globalCompositeOperation = "screen";
     for (let i = 0; i < this.blobs.length; i++) {
-      this.blobs[i].draw(ctx, ratio);
+      this.blobs[i].draw(ctx);
     }
   }
 
@@ -215,7 +222,7 @@ export default class Scene {
     };
   }
 
-  private get pixelRatio(): number {
+  private static measurePixelRatio(): number {
     return Math.min(window.devicePixelRatio || 1, Scene.maxPixelRatio);
   }
 

@@ -4,7 +4,7 @@ import "@fontsource/fredoka/700.css";
 import "./index.css";
 import Scene from "./models/Scene";
 
-const scene = new Scene();
+const scene = Scene.instance;
 
 const banner = String.raw`▗▄▄▖ ▗▖    ▗▄▖ ▗▄▄▖ 
 ▐▌ ▐▌▐▌   ▐▌ ▐▌▐▌ ▐▌

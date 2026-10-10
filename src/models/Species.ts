@@ -13,10 +13,10 @@ export default class Species {
   color: HslColor;
   public readonly sprite: SpeciesSprite;
 
-  constructor(index: number, palette: Palette, pixelRatio: number) {
+  constructor(index: number, palette: Palette) {
     this.index = index;
     this.color = this.pickColor(palette);
-    this.sprite = new SpeciesSprite(this.color, pixelRatio);
+    this.sprite = new SpeciesSprite(this.color);
   }
 
   applyPalette(palette: Palette): void {

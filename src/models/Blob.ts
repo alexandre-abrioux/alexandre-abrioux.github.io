@@ -1,7 +1,8 @@
 import { easeInOutBack, easeOutBack } from "js-easing-functions";
 
 import { random } from "../helper";
-import type { Position, Size } from "../types";
+import type { Position } from "../types";
+import Scene from "./Scene";
 import type Species from "./Species";
 
 const initialGrowOvershoot = 3;
@@ -20,7 +21,6 @@ const repulsionRelaxationMs = 1000;
 
 export default class Blob {
   public readonly species: Species;
-  private readonly viewport: Size;
   private createdAt: number;
   private top: number;
   private left: number;
@@ -48,9 +48,8 @@ export default class Blob {
   private velocityX: number;
   private velocityY: number;
 
-  constructor(species: Species, viewport: Size) {
+  constructor(species: Species) {
     this.species = species;
-    this.viewport = viewport;
     const margin = this.maxRadiusPercent();
     this.top = random(margin.y, 100 - margin.y);
     this.left = random(margin.x, 100 - margin.x);
@@ -76,21 +75,23 @@ export default class Blob {
   }
 
   maxRadiusPercent(): { x: number; y: number } {
+    const { viewport } = Scene.instance;
     const radius = (maxSize * maxScale) / 2;
     return {
-      x: (radius / this.viewport.width) * 100,
-      y: (radius / this.viewport.height) * 100,
+      x: (radius / viewport.width) * 100,
+      y: (radius / viewport.height) * 100,
     };
   }
 
-  draw(ctx: CanvasRenderingContext2D, pixelRatio: number): void {
+  draw(ctx: CanvasRenderingContext2D): void {
+    const { pixelRatio, viewport } = Scene.instance;
     const size = this.initialSize * this.scale * pixelRatio;
     if (size <= 0) return;
     const angle = (this.rotation * Math.PI) / 180;
     const cos = Math.cos(angle) * size;
     const sin = Math.sin(angle) * size;
-    const x = (this.left / 100) * this.viewport.width * pixelRatio;
-    const y = (this.top / 100) * this.viewport.height * pixelRatio;
+    const x = (this.left / 100) * viewport.width * pixelRatio;
+    const y = (this.top / 100) * viewport.height * pixelRatio;
     const flip = this.mirrored ? -1 : 1;
     ctx.setTransform(cos * flip, sin * flip, -sin, cos, x, y);
     ctx.drawImage(this.species.sprite.canvas, -0.5, -0.5, 1, 1);
@@ -106,9 +107,10 @@ export default class Blob {
   }
 
   getPosition(): Position {
+    const { viewport } = Scene.instance;
     return {
-      x: (this.left / 100) * this.viewport.width,
-      y: (this.top / 100) * this.viewport.height,
+      x: (this.left / 100) * viewport.width,
+      y: (this.top / 100) * viewport.height,
     };
   }
 
@@ -118,7 +120,6 @@ export default class Blob {
     return (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
   }
 
-  // pushes both blobs apart, each away from the other's current position
   repelFrom(other: Blob, delta: number): void {
     const a = this.getPosition();
     const b = other.getPosition();
@@ -131,7 +132,7 @@ export default class Blob {
     delta: number,
     strength: number = repulsionStrength,
   ): void {
-    const { width: w, height: h } = this.viewport;
+    const { width: w, height: h } = Scene.instance.viewport;
     const dx = (this.left / 100) * w - repulsionPoint.x;
     const dy = (this.top / 100) * h - repulsionPoint.y;
     const rawDistanceSq = dx * dx + dy * dy;
@@ -163,11 +164,12 @@ export default class Blob {
   }
 
   animatePosition(delta: number): void {
+    const { viewport } = Scene.instance;
     this.left += this.velocityX * delta;
     this.top += this.velocityY * delta;
     const radius = (this.initialSize * this.scale) / 2;
-    const radiusX = (radius / this.viewport.width) * 100;
-    const radiusY = (radius / this.viewport.height) * 100;
+    const radiusX = (radius / viewport.width) * 100;
+    const radiusY = (radius / viewport.height) * 100;
     if (
       (this.left < radiusX && this.velocityX < 0) ||
       (this.left > 100 - radiusX && this.velocityX > 0)
@@ -225,7 +227,7 @@ export default class Blob {
 
   duplicate(): Blob[] | false {
     if (Math.random() > 0.03) return false;
-    const children = [new Blob(this.species, this.viewport), new Blob(this.species, this.viewport)];
+    const children = [new Blob(this.species), new Blob(this.species)];
     const margin = this.maxRadiusPercent();
     children.forEach((child) => {
       child.top = this.top + random(-1, 1);

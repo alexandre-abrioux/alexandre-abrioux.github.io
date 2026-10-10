@@ -1,6 +1,7 @@
 import { easeInOutSine } from "js-easing-functions";
 
 import { random } from "../helper";
+import Scene from "./Scene";
 import type { HslColor } from "./Species";
 
 const spriteBaseSize = 128;
@@ -21,12 +22,12 @@ export default class SpeciesSprite {
   private borderRadiusAnimationDuration: number;
   private borderRadiusNextUpdateAt: number = 0;
 
-  constructor(color: HslColor, pixelRatio: number) {
-    this.size = Math.round(spriteBaseSize * pixelRatio);
+  constructor(color: HslColor) {
+    this.size = Math.round(spriteBaseSize * Scene.instance.pixelRatio);
     this.canvas = document.createElement("canvas");
     this.canvas.width = this.size;
     this.canvas.height = this.size;
-    // render the sprite on CPU otherwise blobs blink on every frame on Firefox Android
+    // render the sprite on CPU otherwise blobs blink on every frame on Firefox for Android
     const context = this.canvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("Canvas 2D context is not supported");
     this.context = context;
