@@ -14,6 +14,12 @@ export default class Scene {
   private static readonly debugInterval = 500;
   private static readonly blobOpacity = 0.9;
   private static readonly maxPixelRatio = 2;
+  private static readonly deviceShakeThreshold = 12;
+  private static readonly deviceShakeStrength = 3;
+  private static readonly deviceMotionMaxIntervalMs = 100;
+  private static readonly deviceTiltStrength = 0.00004;
+  private static readonly deviceTiltSmoothingMs = 100;
+  private static readonly deviceTiltRestMs = 3000;
   private static singleton?: Scene;
 
   public static get instance(): Scene {
@@ -36,6 +42,10 @@ export default class Scene {
   private pausedDuration = 0;
   private cursor?: Position;
   private headerRepulsionPoints: Position[] = [];
+  private shakeImpulse?: Position;
+  private gravityDirection?: Position;
+  private gravityDirectionAtRest?: Position;
+  private tilt?: Position;
   private animationFrame?: number;
   private frames = 0;
   private lastDebugAt = 0;
@@ -51,12 +61,26 @@ export default class Scene {
     this.context = context;
   }
 
-  public createObjects(): void {
+  public init(): void {
+    this.createCanvas();
+    this.applyPaletteBackground();
+    this.spawnBlobs();
+    this.trackCursor();
+    this.trackHeader();
+    this.trackDeviceMotion();
+    this.trackVisibility();
+    this.trackPaletteButton();
+    this.resume();
+  }
+
+  private createCanvas(): void {
     document.body.append(this.canvas);
     this.resizeCanvas();
     window.addEventListener("resize", () => this.resizeCanvas());
     window.visualViewport?.addEventListener("resize", () => this.resizeCanvas());
-    this.applyPaletteBackground();
+  }
+
+  private spawnBlobs(): void {
     for (let i = 0; i < Scene.initSpecies; i++) {
       const species = new Species(i, this.palette);
       this.species.push(species);
@@ -68,7 +92,7 @@ export default class Scene {
     }
   }
 
-  public trackCursor(): void {
+  private trackCursor(): void {
     const onMove = (e: PointerEvent) => {
       this.cursor = { x: e.clientX, y: e.clientY };
     };
@@ -85,7 +109,29 @@ export default class Scene {
     document.documentElement.addEventListener("pointerleave", onLeave);
   }
 
-  public trackHeader(): void {
+  private trackDeviceMotion(): void {
+    if (typeof DeviceMotionEvent === "undefined") return;
+    let lastMotionAt: number | undefined;
+    const onMotion = (e: DeviceMotionEvent) => {
+      const elapsed = lastMotionAt === undefined ? 0 : e.timeStamp - lastMotionAt;
+      lastMotionAt = e.timeStamp;
+      const ms = Math.min(Math.max(elapsed, 0), Scene.deviceMotionMaxIntervalMs);
+      const g = e.accelerationIncludingGravity;
+      if (g?.x != null && g.y != null)
+        this.updateTilt(Scene.coordinatesToScreenOrientation(g.x, g.y), ms);
+      const a = e.acceleration;
+      if (a?.x == null || a.y == null) return;
+      if (Math.hypot(a.x, a.y) < Scene.deviceShakeThreshold) return;
+      const { x, y } = Scene.coordinatesToScreenOrientation(a.x, a.y);
+      const k = (-Scene.deviceShakeStrength * ms) / 1000;
+      const impulse = (this.shakeImpulse ??= { x: 0, y: 0 });
+      impulse.x += x * k;
+      impulse.y += y * k;
+    };
+    window.addEventListener("devicemotion", onMotion);
+  }
+
+  private trackHeader(): void {
     const elements = document.querySelectorAll(".identity h1, .identity p, .identity a");
     if (!elements.length) return;
     const onResize = () => {
@@ -105,13 +151,24 @@ export default class Scene {
     void document.fonts.ready.then(onResize);
   }
 
-  public pause(): void {
+  private trackVisibility(): void {
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) this.pause();
+      else this.resume();
+    });
+  }
+
+  private trackPaletteButton(): void {
+    document.getElementById("next-palette")?.addEventListener("click", () => this.nextPalette());
+  }
+
+  private pause(): void {
     if (this.pausedAt !== undefined) return;
     this.pausedAt = performance.now();
     this.stopLoop();
   }
 
-  public resume(): void {
+  private resume(): void {
     if (this.pausedAt === undefined) return;
     this.pausedDuration += performance.now() - this.pausedAt;
     this.pausedAt = undefined;
@@ -119,7 +176,7 @@ export default class Scene {
     this.loop();
   }
 
-  public nextPalette(): void {
+  private nextPalette(): void {
     const index = palettes.indexOf(this.palette);
     this.palette = palettes[(index + 1) % palettes.length];
     this.applyPaletteBackground();
@@ -178,6 +235,7 @@ export default class Scene {
     const repulsionPoints = this.cursor ? [...headerPoints, this.cursor] : headerPoints;
     const delta = Math.min(elapsed, 1000);
     this.repelClosestPairs(delta);
+    this.applyImpulse(delta);
     for (let i = 0; i < this.species.length; i++) this.species[i].sprite.animate();
     for (let i = 0; i < this.blobs.length; i++) this.blobs[i].animate(delta, repulsionPoints);
   }
@@ -192,6 +250,42 @@ export default class Scene {
     for (let i = 0; i < this.blobs.length; i++) {
       this.blobs[i].draw(ctx);
     }
+  }
+
+  private updateTilt(reading: Position, ms: number): void {
+    const gravityDirection = Scene.smoothTowards(
+      this.gravityDirection,
+      reading,
+      ms,
+      Scene.deviceTiltSmoothingMs,
+    );
+    const gravityDirectionAtRest = Scene.smoothTowards(
+      this.gravityDirectionAtRest,
+      gravityDirection,
+      ms,
+      Scene.deviceTiltRestMs,
+    );
+    this.gravityDirection = gravityDirection;
+    this.gravityDirectionAtRest = gravityDirectionAtRest;
+    this.tilt = {
+      x: gravityDirectionAtRest.x - gravityDirection.x,
+      y: gravityDirectionAtRest.y - gravityDirection.y,
+    };
+  }
+
+  private applyImpulse(delta: number): void {
+    const impulse = { x: 0, y: 0 };
+    if (this.tilt) {
+      impulse.x += this.tilt.x * Scene.deviceTiltStrength * delta;
+      impulse.y += this.tilt.y * Scene.deviceTiltStrength * delta;
+    }
+    if (this.shakeImpulse) {
+      impulse.x += this.shakeImpulse.x;
+      impulse.y += this.shakeImpulse.y;
+      this.shakeImpulse = undefined;
+    }
+    if (impulse.x === 0 && impulse.y === 0) return;
+    for (let i = 0; i < this.blobs.length; i++) this.blobs[i].applyImpulse(impulse);
   }
 
   private repelClosestPairs(delta: number): void {
@@ -224,6 +318,24 @@ export default class Scene {
       width: window.visualViewport?.width ?? window.innerWidth,
       height: window.visualViewport?.height ?? window.innerHeight,
     };
+  }
+
+  private static coordinatesToScreenOrientation(x: number, y: number): Position {
+    const angle = ((screen.orientation?.angle ?? 0) * Math.PI) / 180;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return { x: x * cos - y * sin, y: -(x * sin + y * cos) };
+  }
+
+  private static smoothTowards(
+    from: Position | undefined,
+    to: Position,
+    ms: number,
+    timeConstantMs: number,
+  ): Position {
+    if (!from) return { ...to };
+    const k = 1 - Math.exp(-ms / timeConstantMs);
+    return { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
   }
 
   private static measurePixelRatio(): number {

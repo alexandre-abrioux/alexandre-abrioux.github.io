@@ -18,6 +18,9 @@ const repulsionSofteningDistance = 30;
 const repulsionMaxDistance = 250;
 const repulsionMaxSpeed = 0.5;
 const repulsionRelaxationMs = 1000;
+const impulseSpeedMax = 1.5;
+const impulseFactorMin = 0.5;
+const impulseFactorMax = 1.5;
 
 export default class Blob {
   public readonly species: Species;
@@ -47,6 +50,7 @@ export default class Blob {
   private movementSpeed: number;
   private velocityX: number;
   private velocityY: number;
+  private impulseFactor: number;
 
   constructor(species: Species) {
     this.species = species;
@@ -72,6 +76,7 @@ export default class Blob {
     this.movementSpeed = random(minSpeed, maxSpeed);
     this.velocityX = (Math.cos(this.movementDirection) * this.movementSpeed) / 1000;
     this.velocityY = (Math.sin(this.movementDirection) * this.movementSpeed) / 1000;
+    this.impulseFactor = random(impulseFactorMin, impulseFactorMax);
   }
 
   public draw(ctx: CanvasRenderingContext2D): void {
@@ -108,6 +113,19 @@ export default class Blob {
     const b = other.getPosition();
     this.applyRepulsion(b, delta, blobRepulsionStrength);
     other.applyRepulsion(a, delta, blobRepulsionStrength);
+  }
+
+  public applyImpulse(impulse: Position): void {
+    const { width: w, height: h } = Scene.instance.viewport;
+    let vx = (this.velocityX / 100) * w + impulse.x * this.impulseFactor;
+    let vy = (this.velocityY / 100) * h + impulse.y * this.impulseFactor;
+    const speed = Math.hypot(vx, vy);
+    if (speed > impulseSpeedMax) {
+      vx *= impulseSpeedMax / speed;
+      vy *= impulseSpeedMax / speed;
+    }
+    this.velocityX = (vx / w) * 100;
+    this.velocityY = (vy / h) * 100;
   }
 
   public duplicate(): Blob[] | false {

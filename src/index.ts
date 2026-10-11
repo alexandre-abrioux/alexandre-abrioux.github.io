@@ -4,8 +4,6 @@ import "@fontsource/fredoka/700.css";
 import "./index.css";
 import Scene from "./models/Scene";
 
-const scene = Scene.instance;
-
 const banner = String.raw`▗▄▄▖ ▗▖    ▗▄▖ ▗▄▄▖ 
 ▐▌ ▐▌▐▌   ▐▌ ▐▌▐▌ ▐▌
 ▐▛▀▚▖▐▌   ▐▌ ▐▌▐▛▀▚▖
@@ -14,15 +12,7 @@ const banner = String.raw`▗▄▄▖ ▗▖    ▗▄▖ ▗▄▄▖
 
 const init = () => {
   console.log(banner);
-  scene.createObjects();
-  scene.trackCursor();
-  scene.trackHeader();
-  scene.resume();
-  document.getElementById("next-palette")?.addEventListener("click", () => scene.nextPalette());
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) scene.pause();
-    else scene.resume();
-  });
+  Scene.instance.init();
 };
 
 window.onload = init;
