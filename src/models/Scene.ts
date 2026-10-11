@@ -6,7 +6,7 @@ import Species from "./Species";
 export default class Scene {
   private static readonly initBlobs = 10;
   private static readonly maxBlobs = 200;
-  private static readonly smallScreenMaxBlobs = 50;
+  private static readonly smallScreenMaxBlobs = 80;
   private static readonly smallScreenQuery = "(max-width: 640px)";
   private static readonly initSpecies = 5;
   private static readonly duplicateInterval = 200;
@@ -17,9 +17,9 @@ export default class Scene {
   private static readonly deviceShakeThreshold = 12;
   private static readonly deviceShakeStrength = 3;
   private static readonly deviceMotionMaxIntervalMs = 100;
-  private static readonly deviceTiltStrength = 0.00004;
+  private static readonly deviceTiltStrength = 0.0005;
   private static readonly deviceTiltSmoothingMs = 100;
-  private static readonly deviceTiltRestMs = 3000;
+  private static readonly deviceTiltRestMs = 500;
   private static singleton?: Scene;
 
   public static get instance(): Scene {
