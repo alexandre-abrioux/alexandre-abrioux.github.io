@@ -86,13 +86,17 @@ export default class Scene {
   }
 
   public trackHeader(): void {
-    const header = document.querySelector(".identity h1");
-    if (!header) return;
+    const elements = document.querySelectorAll(".identity h1, .identity p, .identity a");
+    if (!elements.length) return;
     const onResize = () => {
-      const rect = header.getBoundingClientRect();
-      const y = rect.top + rect.height / 2;
+      const rects = Array.from(elements, (el) => el.getBoundingClientRect());
+      const left = Math.min(...rects.map((r) => r.left));
+      const right = Math.max(...rects.map((r) => r.right));
+      const top = Math.min(...rects.map((r) => r.top));
+      const bottom = Math.max(...rects.map((r) => r.bottom));
+      const y = (top + bottom) / 2;
       this.headerRepulsionPoints = [1, 3, 5].map((n) => ({
-        x: rect.left + (rect.width * n) / 6,
+        x: left + ((right - left) * n) / 6,
         y,
       }));
     };

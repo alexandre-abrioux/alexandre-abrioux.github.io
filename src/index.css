@@ -40,6 +40,13 @@ html {
   white-space: nowrap;
 }
 
+.identity p {
+  margin: 0 1rem 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+  text-align: center;
+}
+
 .identity a {
   pointer-events: auto;
   display: inline-flex;
