@@ -47,6 +47,12 @@ html {
   text-align: center;
 }
 
+@media (--small-screen) {
+  .identity p span {
+    display: block;
+  }
+}
+
 .identity a {
   pointer-events: auto;
   display: inline-flex;
